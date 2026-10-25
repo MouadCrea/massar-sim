@@ -161,11 +161,11 @@ code{background:#eef2f6;padding:1px 6px;border-radius:5px;direction:ltr;display:
       </div>
 
       <div class="card">
-        <h2>🔄 الحفظ المشترك بين الأجهزة</h2>
-        <p class="muted">الحفظ العادي يبقى في نفس الجهاز فقط. باش تشوف تعديلاتك من جهاز آخر، فعّل المزامنة مع GitHub من واجهة الأدوات: الموقع كيجلب الاختيارات من ملف <code>choices.json</code> في المستودع عند الفتح، وكيرفع تعديلاتك لنفس الملف عند كل حفظ. القراءة من المستودع العام لا تحتاج Token، أما الرفع فيحتاج Token تدخلو مرة واحدة في كل جهاز.</p>
+        <h2>🔄 الحفظ المشترك بين الأجهزة — تلقائي</h2>
+        <p class="muted">بمجرد ما تدير «حفظ»، التغيير كيترفع للسحابة وكيبان في أي جهاز آخر تدخل منو بنفس اسم المستخدم (<b>massar-demo</b>)، بلا Token وبلا إعداد. المزامنة كتتم حسب اسم المستخدم، وكل قسم كيتخزن بوحدو. تنبيه: هادي خدمة تجريبية مجانية للبيانات الوهمية فقط، وخاصك تدير تصدير JSON من وقت لآخر كنسخة احتياطية، لأن الخدمة قد تمسح البيانات بعد فترة طويلة بلا استعمال.</p>
         <div class="row">
-          <button class="btn" onclick="loadFromGitHub(true)">تحميل من GitHub الآن</button>
-          <button class="btn-light" onclick="goView('tools')">إعدادات المزامنة ←</button>
+          <button class="btn" onclick="cloudLoadAll(true)">مزامنة الآن من السحابة</button>
+          <button class="btn-light" onclick="loadFromGitHub(true)">تحميل من GitHub (اختياري)</button>
           <span id="syncStatusDash" class="muted"></span>
         </div>
       </div>
@@ -465,7 +465,7 @@ function openLevel(levelId){
   }).join("");
   goView("classes", "الرئيسية ← "+currentLevel.name);
 }
-function openClass(classId){
+async function openClass(classId){
   currentClass=classId;
   const lv=LEVELS.find(l=>l.id===classId.split(" ")[0]);
   document.getElementById("studentsTitle").textContent="القسم "+classId+" — لائحة التلاميذ";
@@ -474,6 +474,9 @@ function openClass(classId){
   fillStudentFilters();
   renderStudents();
   goView("students", "الرئيسية ← "+lv.name+" ← القسم "+classId);
+  // جلب نسخة السحابة لهذا القسم (من جهاز آخر بنفس اسم المستخدم)، إن وجدت
+  const n=await cloudLoadClass(classId);
+  if(n>0) renderStudents();
 }
 function renderStudents(){
   const q=(document.getElementById("searchInput").value||"").trim();
@@ -561,11 +564,13 @@ async function autoSyncIfEnabled(){
 async function saveOnly(){
   if(draft.length!==5){ toast("يجب اختيار 5 أنشطة بالضبط قبل الحفظ."); return; }
   choices[currentStudent.id]=[...draft]; persist(); renderActs(); toast("✓ تم حفظ اختيارات "+currentStudent.name);
+  await cloudSaveClass(currentStudent.classId);
   await autoSyncIfEnabled();
 }
 async function saveAndNext(){
   if(draft.length!==5){ toast("يجب اختيار 5 أنشطة بالضبط قبل الحفظ."); return; }
   choices[currentStudent.id]=[...draft]; persist();
+  await cloudSaveClass(currentStudent.classId);
   await autoSyncIfEnabled();
   const list=classStudents(currentStudent.classId);
   const i=list.findIndex(s=>s.id===currentStudent.id);
@@ -642,6 +647,7 @@ function doLogin(){
     sessionStorage.setItem("massar-sim-session","1");
     document.getElementById("appUser").textContent="المستخدم: "+u;
     hideLoginScreen();
+    setTimeout(()=>{ cloudLoadAll(false); }, 600);
   } else {
     document.getElementById("loginError").textContent="اسم المستخدم أو كلمة المرور غير صحيحة.";
   }
@@ -656,6 +662,56 @@ function fillStudentFilters(){
   document.getElementById("fltClass").innerHTML=Array.from({length:lv.classes},(_,k)=>`<option value="${lv.id} ${k+1}" ${currentClass===(lv.id+" "+(k+1))?"selected":""}>${lv.id} ${k+1}</option>`).join("");
 }
 function filterJump(){ openClass(document.getElementById("fltClass").value); }
+// مزامنة سحابية تلقائية حسب اسم المستخدم — بلا Token
+// خدمة MantleDB المجانية: namespace = اسم المستخدم، وكل قسم مفتاح مستقل
+// تحذير: بيانات تجريبية وهمية فقط، والخدمة مجانية وقد تمسح البيانات بعد فترة طويلة بلا استعمال
+function cloudNs(){ return "massar-demo"; }
+function cloudUrlForClass(classId){
+  const key = "class-" + classId.replace(" ", "-");
+  return "https://mantledb.sh/v2/" + cloudNs() + "/" + encodeURIComponent(key);
+}
+function cloudClassChoices(classId){
+  const out={};
+  classStudents(classId).forEach(s=>{ if(choices[s.id] && choices[s.id].length===5) out[s.id]=choices[s.id]; });
+  return out;
+}
+async function cloudSaveClass(classId){
+  try{
+    const body={updatedAt:new Date().toISOString(), classId:classId, choices:cloudClassChoices(classId)};
+    const res=await fetch(cloudUrlForClass(classId), {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)});
+    if(res.ok){ setSyncStatus("✓ تمت المزامنة السحابية للقسم "+classId); return true; }
+    setSyncStatus("تعذرت المزامنة السحابية الآن — الحفظ المحلي محفوظ.");
+    return false;
+  }catch(e){
+    setSyncStatus("تعذرت المزامنة السحابية الآن — الحفظ المحلي محفوظ.");
+    return false;
+  }
+}
+async function cloudLoadClass(classId){
+  try{
+    const res=await fetch(cloudUrlForClass(classId)+"?t="+Date.now());
+    if(!res.ok) return 0;
+    const data=await res.json();
+    const remote=data.choices||data;
+    if(!remote || typeof remote!=="object") return 0;
+    let n=0;
+    Object.keys(remote).forEach(id=>{ if(Array.isArray(remote[id]) && remote[id].length===5){ choices[id]=remote[id]; n++; } });
+    if(n>0){ persist(); }
+    return n;
+  }catch(e){ return 0; }
+}
+async function cloudLoadAll(manual){
+  const allClasses=[];
+  LEVELS.forEach(lv=>{ for(let c=1;c<=lv.classes;c++) allClasses.push(lv.id+" "+c); });
+  let total=0;
+  const results=await Promise.allSettled(allClasses.map(cid=>cloudLoadClass(cid)));
+  results.forEach(r=>{ if(r.status==="fulfilled") total+=r.value; });
+  updateStats(); renderDashboard();
+  const msg= total>0 ? ("✓ تمت المزامنة من السحابة: "+total+" اختيار.") : "لا اختيارات جديدة في السحابة، أو تعذر الاتصال بها.";
+  setSyncStatus(msg);
+  if(manual) toast(msg);
+  return total;
+}
 function ghFields(){
   return {
     owner:(document.getElementById("ghOwner")?.value||"MouadCrea").trim(),
@@ -736,8 +792,8 @@ goView("dashboard");
     showLoginScreen();
   }
 })();
-// جلب تلقائي صامت من GitHub عند الفتح (قراءة من مستودع عام، بلا Token)
-setTimeout(()=>{ loadFromGitHub(false); }, 900);
+// جلب تلقائي صامت عند الفتح: من السحابة حسب اسم المستخدم أولاً، ثم من GitHub (اختياري)
+setTimeout(()=>{ cloudLoadAll(false); loadFromGitHub(false); }, 900);
 </script>
 </body>
 </html>
