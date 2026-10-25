@@ -107,22 +107,13 @@ code{background:#eef2f6;padding:1px 6px;border-radius:5px;direction:ltr;display:
     <div class="login-card">
       <div class="brand"><b>مسار</b><span>محاكاة تجريبية — الأنشطة الموازية</span></div>
       <div id="loginForm">
-        <label>اسم المستخدم (التجريبي)</label>
-        <input type="text" id="loginUser" placeholder="اسم المستخدم التجريبي">
-        <label>كلمة المرور (التجريبية)</label>
-        <input type="password" id="loginPass" placeholder="كلمة المرور التجريبية">
+        <label>اسم المستخدم</label>
+        <input type="text" id="loginUser" placeholder="اسم المستخدم الرمزي">
+        <label>كلمة المرور</label>
+        <input type="password" id="loginPass" placeholder="كلمة المرور الرمزية">
         <button class="btn" style="width:100%" onclick="doLogin()">دخول</button>
         <p id="loginError" style="color:#a93226;font-size:13.5px"></p>
-        <p class="muted">نسيت الدخول التجريبي؟ <button class="btn-light btn-sm" onclick="resetAuth()">إعادة تعيين الدخول المحلي</button> — هذا يمسح الحساب التجريبي فقط، ولا يمسح الاختيارات المحفوظة.</p>
-      </div>
-      <div id="setupForm" class="hidden">
-        <p><b>أول دخول: أنشئ حساباً تجريبياً محلياً</b></p>
-        <label>اختر اسم مستخدم تجريبياً</label>
-        <input type="text" id="setupUser" placeholder="مثال: demo">
-        <label>اختر كلمة مرور تجريبية (4 حروف على الأقل)</label>
-        <input type="password" id="setupPass" placeholder="لا تستعمل كلمة مرور حقيقية">
-        <button class="btn-gold" style="width:100%" onclick="doSetup()">إنشاء الحساب التجريبي والدخول</button>
-        <p class="muted">يُحفظ هذا الحساب في متصفحك فقط، ولا يُرسل لأي موقع.</p>
+        <p class="muted">الدخول بهذه البيانات الرمزية فقط. لا تستعمل هنا أي بيانات حقيقية.</p>
       </div>
     </div>
   </div>
@@ -616,44 +607,26 @@ function resetChoices(){
   if(!confirm("مسح كل الاختيارات المحفوظة؟ لائحة التلاميذ ستبقى كما هي.")) return;
   choices={}; persist(); renderDashboard(); toast("تم مسح الاختيارات.");
 }
-function getAuth(){ try{ return JSON.parse(localStorage.getItem("massar-sim-auth-v1")||"null"); }catch(e){ return null; } }
-function enc(s){ return btoa(String.fromCharCode(...new TextEncoder().encode(s))); }
+// بيانات دخول رمزية ثابتة (تجريبية فقط، وليست حماية حقيقية لأن الكود عام)
+const DEMO_USER="massar-demo";
+const DEMO_PASS="Demo@2026";
 function showLoginScreen(){
-  const a=getAuth();
   document.getElementById("loginScreen").classList.remove("hidden");
-  document.getElementById("loginForm").classList.toggle("hidden", !a);
-  document.getElementById("setupForm").classList.toggle("hidden", !!a);
   document.getElementById("loginError").textContent="";
 }
 function hideLoginScreen(){ document.getElementById("loginScreen").classList.add("hidden"); }
-function doSetup(){
-  const u=document.getElementById("setupUser").value.trim();
-  const p=document.getElementById("setupPass").value;
-  if(!u || p.length<4){ toast("اختر اسم مستخدم وكلمة مرور تجريبية من 4 حروف على الأقل."); return; }
-  localStorage.setItem("massar-sim-auth-v1", JSON.stringify({u:u, p:enc(p)}));
-  sessionStorage.setItem("massar-sim-session","1");
-  document.getElementById("appUser").textContent="المستخدم: "+u;
-  hideLoginScreen(); toast("✓ تم إنشاء الحساب التجريبي والدخول.");
-}
 function doLogin(){
-  const a=getAuth(); if(!a){ showLoginScreen(); return; }
   const u=document.getElementById("loginUser").value.trim();
   const p=document.getElementById("loginPass").value;
-  if(u===a.u && enc(p)===a.p){
+  if(u===DEMO_USER && p===DEMO_PASS){
     sessionStorage.setItem("massar-sim-session","1");
     document.getElementById("appUser").textContent="المستخدم: "+u;
     hideLoginScreen();
   } else {
-    document.getElementById("loginError").textContent="اسم المستخدم أو كلمة المرور التجريبية غير صحيحة.";
+    document.getElementById("loginError").textContent="اسم المستخدم أو كلمة المرور غير صحيحة.";
   }
 }
 function logout(){
-  sessionStorage.removeItem("massar-sim-session");
-  showLoginScreen();
-}
-function resetAuth(){
-  if(!confirm("إعادة تعيين الدخول المحلي؟ سيُطلب منك إنشاء حساب تجريبي جديد، وستبقى الاختيارات المحفوظة.")) return;
-  localStorage.removeItem("massar-sim-auth-v1");
   sessionStorage.removeItem("massar-sim-session");
   showLoginScreen();
 }
@@ -696,9 +669,8 @@ loadGhSettings();
 renderDashboard();
 goView("dashboard");
 (function(){
-  const a=getAuth();
-  if(a && sessionStorage.getItem("massar-sim-session")==="1"){
-    document.getElementById("appUser").textContent="المستخدم: "+a.u;
+  if(sessionStorage.getItem("massar-sim-session")==="1"){
+    document.getElementById("appUser").textContent="المستخدم: "+DEMO_USER;
     hideLoginScreen();
   } else {
     showLoginScreen();
