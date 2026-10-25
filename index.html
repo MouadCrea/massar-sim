@@ -13,10 +13,10 @@ body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Tahoma,Arial,sans-s
 .topbar .logo small{display:block;font-size:12px;opacity:.85;letter-spacing:0}
 .topbar .user{font-size:13px;text-align:left;opacity:.95}
 .disclaimer{background:#fff3cd;border-bottom:1px solid #e6c87a;padding:9px 16px;font-size:13.5px;text-align:center}
-.layout{display:flex;max-width:1200px;margin:0 auto;min-height:calc(100vh - 110px)}
-aside{width:230px;flex-shrink:0;background:#22384f;color:#fff;padding:12px 0}
-aside .menu-title{padding:6px 16px 10px;font-size:12px;letter-spacing:.5px;opacity:.7}
-.navbtn{display:block;width:100%;text-align:right;background:none;border:0;color:#eaf0f6;padding:11px 16px;cursor:pointer;font:inherit;font-size:14.5px;border-right:4px solid transparent}
+.layout{display:flex;flex-direction:column;max-width:520px;margin:0 auto;min-height:calc(100vh - 110px)}
+aside{width:100%;background:#22384f;color:#fff;padding:8px;display:flex;gap:6px;overflow-x:auto}
+aside .menu-title{display:none}
+.navbtn{flex-shrink:0;text-align:right;background:none;border:0;color:#eaf0f6;padding:9px 13px;cursor:pointer;font:inherit;font-size:14px;border-radius:20px}
 .navbtn:hover{background:#2e4a66}
 .navbtn.active{background:#fff;color:var(--navy);font-weight:700;border-right-color:var(--gold)}
 main{flex:1;padding:16px;min-width:0}
@@ -25,7 +25,7 @@ main{flex:1;padding:16px;min-width:0}
 .pagehead p{margin:0;color:var(--muted);font-size:13.5px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:14px}
 .card h2{margin:0 0 12px;font-size:17px;color:var(--navy);border-bottom:1px solid var(--line);padding-bottom:8px}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:14px}
 .stat{background:var(--card);border:1px solid var(--line);border-top:4px solid var(--blue);border-radius:8px;padding:14px;text-align:center}
 .stat b{font-size:24px;display:block;color:var(--navy)}
 .stat span{font-size:13px;color:var(--muted)}
@@ -38,7 +38,7 @@ button{font:inherit;cursor:pointer;border:0;border-radius:6px;padding:10px 14px}
 .btn-danger{background:#fdecea;color:#a93226;border:1px solid #f0c0bb}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .btn-sm{padding:6px 10px;font-size:13.5px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.grid{display:grid;grid-template-columns:1fr;gap:10px}
 .level-card{text-align:right;background:#f4f7fa;border:1px solid var(--line);border-radius:8px;padding:14px}
 .level-card b{font-size:17px;color:var(--navy);display:block}
 .level-card span{color:var(--muted);font-size:13.5px}
@@ -55,7 +55,7 @@ tr:nth-child(even) td{background:#f8fafc}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 input,select{font:inherit;padding:10px 11px;border:1px solid #cbd6e0;border-radius:6px}
 input[type=search],input[type=text]{width:100%;max-width:420px}
-.act-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.act-grid{display:grid;grid-template-columns:1fr;gap:10px}
 .act{border:2px solid var(--line);background:#fff;text-align:right;position:relative;padding:12px 12px 12px 52px;border-radius:8px}
 .act.selected{border-color:var(--green);background:#f0faf3}
 .rank{position:absolute;left:10px;top:10px;width:32px;height:32px;border-radius:50%;background:#e8eef4;color:#5a6b7c;display:flex;align-items:center;justify-content:center;font-weight:800}
@@ -71,15 +71,77 @@ label{font-size:13.5px;font-weight:700;color:#33475a}
 .field input{width:100%;max-width:520px}
 code{background:#eef2f6;padding:1px 6px;border-radius:5px;direction:ltr;display:inline-block}
 .toast{position:fixed;bottom:18px;right:18px;left:18px;max-width:520px;margin:auto;background:#122d1a;color:#fff;padding:12px 14px;border-radius:10px;text-align:center;z-index:50;box-shadow:0 6px 20px rgba(0,0,0,.25)}
-@media(max-width:760px){.layout{flex-direction:column}aside{width:100%;display:flex;overflow-x:auto}aside .menu-title{display:none}.navbtn{white-space:nowrap;width:auto}.stats{grid-template-columns:repeat(2,1fr)}}
+#rankPicker{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:120;display:flex;align-items:flex-end;justify-content:center}
+.picker-card{background:#fff;width:100%;max-width:520px;border-radius:18px 18px 0 0;padding:18px 16px 24px}
+.rank-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:12px 0}
+.rank-btn{padding:14px 4px;font-size:18px;font-weight:800;background:#eaf0f6;color:var(--navy);border:1px solid var(--line)}
+.rank-btn.taken{background:#fff1d6;color:#8a5a00}
+.rank-btn.current{background:var(--green);color:#fff}
+#loginScreen{position:fixed;inset:0;z-index:100;background:#5f7fb8;display:flex;flex-direction:column;min-height:100vh;overflow:auto}
+.login-left{color:#fff;padding:28px 20px 10px}
+.login-left h1{font-size:30px;margin:0 0 12px}
+.login-left p{font-size:15px;line-height:1.7;opacity:.92}
+.login-right{background:#fff;display:flex;align-items:flex-start;justify-content:center;padding:20px;width:100%}
+.login-card{width:100%;max-width:360px}
+.login-card .brand{text-align:center;margin-bottom:16px}
+.login-card .brand b{font-size:28px;color:var(--navy)}
+.login-card .brand span{display:block;color:var(--muted);font-size:13px}
+.login-card input{width:100%;max-width:none;margin-bottom:10px}
+.appbar{background:#fff;border-bottom:1px solid var(--line);padding:8px 16px;display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:13.5px;color:#33475a}
+.appbar select{padding:6px 8px}
+.circle{width:280px;height:280px;margin:10px auto;border-radius:50%;overflow:hidden;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;box-shadow:0 4px 14px rgba(0,0,0,.15)}
+.q{border:0;color:#fff;font:inherit;font-weight:700;font-size:15px;cursor:pointer;padding:10px}
+.q small{display:block;font-weight:400;font-size:12px;opacity:.9}
+.q1{background:#3a9a5b}.q2{background:#2e5f8a}.q3{background:#c0392b}.q4{background:#7d5a9e}
+@media(max-width:760px){.layout{flex-direction:column}aside{width:100%;display:flex;overflow-x:auto}aside .menu-title{display:none}.navbtn{white-space:nowrap;width:auto}.stats{grid-template-columns:repeat(2,1fr)}#loginScreen{flex-direction:column;overflow:auto}.login-right{width:100%}.login-left{padding:24px}.circle{width:280px;height:280px}}
 </style>
 </head>
 <body>
+<div id="loginScreen">
+  <div class="login-left">
+    <h1>Bienvenue dans votre<br>espace privé</h1>
+    <p>مرحباً بك في فضائك الخاص — <b>محاكاة تجريبية غير رسمية</b>، وليست موقع مسار الرسمي.<br>نظام معلومات مدمج يحاكي تدبير الأنشطة الموازية: مستوى ← قسم ← تلميذ ← ترتيب 5 أنشطة ← حفظ.</p>
+    <p>⚠️ لا تدخل هنا أبداً بريدك ولا كلمة مرور مسار الحقيقية، ولا أي كلمة مرور حقيقية أخرى. الحساب هنا تجريبي ومحلي فقط، ويُحفظ في متصفحك وحده.</p>
+  </div>
+  <div class="login-right">
+    <div class="login-card">
+      <div class="brand"><b>مسار</b><span>محاكاة تجريبية — الأنشطة الموازية</span></div>
+      <div id="loginForm">
+        <label>اسم المستخدم (التجريبي)</label>
+        <input type="text" id="loginUser" placeholder="اسم المستخدم التجريبي">
+        <label>كلمة المرور (التجريبية)</label>
+        <input type="password" id="loginPass" placeholder="كلمة المرور التجريبية">
+        <button class="btn" style="width:100%" onclick="doLogin()">دخول</button>
+        <p id="loginError" style="color:#a93226;font-size:13.5px"></p>
+        <p class="muted">نسيت الدخول التجريبي؟ <button class="btn-light btn-sm" onclick="resetAuth()">إعادة تعيين الدخول المحلي</button> — هذا يمسح الحساب التجريبي فقط، ولا يمسح الاختيارات المحفوظة.</p>
+      </div>
+      <div id="setupForm" class="hidden">
+        <p><b>أول دخول: أنشئ حساباً تجريبياً محلياً</b></p>
+        <label>اختر اسم مستخدم تجريبياً</label>
+        <input type="text" id="setupUser" placeholder="مثال: demo">
+        <label>اختر كلمة مرور تجريبية (4 حروف على الأقل)</label>
+        <input type="password" id="setupPass" placeholder="لا تستعمل كلمة مرور حقيقية">
+        <button class="btn-gold" style="width:100%" onclick="doSetup()">إنشاء الحساب التجريبي والدخول</button>
+        <p class="muted">يُحفظ هذا الحساب في متصفحك فقط، ولا يُرسل لأي موقع.</p>
+      </div>
+    </div>
+  </div>
+</div>
 <div class="topbar">
   <div class="logo">مسار <small>محاكاة تجريبية — الأنشطة الموازية</small></div>
-  <div class="user">مستخدم تجريبي<br>مؤسسة تجريبية — إعدادي</div>
+  <div class="user">مستخدم تجريبي<br>مؤسسة تجريبية — إعدادي<br><button class="btn-light btn-sm" style="margin-top:6px" onclick="logout()">تسجيل الخروج</button></div>
 </div>
 <div class="disclaimer">⚠️ <b>هذه محاكاة تجريبية غير رسمية، وليست موقع مسار الرسمي.</b> لا تدخل هنا أي بيانات حقيقية ولا أي كلمة مرور حقيقية. كل الأسماء وأرقام مسار وهمية وعشوائية.</div>
+<div class="appbar">
+  <span>📋 حصيلة السنة الدراسية</span>
+  <span>السنة الدراسية:
+    <select><option>2025/2026</option><option>2024/2025</option></select>
+  </span>
+  <span>اللغة: العربية</span>
+  <span>❓ مساعدة</span>
+  <span>🔔 المستجدات</span>
+  <span id="appUser" class="muted"></span>
+</div>
 
 <div class="layout">
   <aside>
@@ -108,7 +170,18 @@ code{background:#eef2f6;padding:1px 6px;border-radius:5px;direction:ltr;display:
       </div>
 
       <div class="card">
-        <h2>الدخول عبر المستوى</h2>
+        <h2>حصيلة السنة الدراسية — 2025/2026</h2>
+        <div class="circle">
+          <button class="q q1" onclick="goStudentsFromMenu()">التلميذ<small>لوائح التلاميذ</small></button>
+          <button class="q q2" onclick="goView('levels')">القيادة والتدبير<small>المستويات والأقسام</small></button>
+          <button class="q q3" onclick="goView('tools')">الدعم المالي<small>الأدوات والتصدير</small></button>
+          <button class="q q4" onclick="goView('levels')">الحياة المدرسية<small>الأنشطة الموازية</small></button>
+        </div>
+        <p class="muted" style="text-align:center">اضغط على أي ربع للدخول إلى واجهته. الواجهة الأساسية للأنشطة الموازية هي: مستوى ← قسم ← تلميذ ← تعديل.</p>
+      </div>
+
+      <div class="card">
+        <h2>الأنشطة الموازية — الدخول عبر المستوى</h2>
         <div class="grid" id="levelsGrid"></div>
       </div>
 
@@ -152,6 +225,15 @@ code{background:#eef2f6;padding:1px 6px;border-radius:5px;direction:ltr;display:
     <section id="view-students" class="hidden">
       <div class="card">
         <h2 id="studentsTitle"></h2>
+        <div class="card" style="padding:12px;margin-bottom:10px">
+          <p style="margin:0 0 8px;font-weight:700;color:var(--navy)">معايير البحث</p>
+          <div class="row">
+            <select id="fltLevel" onchange="fillStudentFilters()"></select>
+            <select id="fltClass"></select>
+            <button class="btn btn-sm" onclick="filterJump()">🔍 بحث</button>
+          </div>
+          <p class="muted" style="margin:8px 0 0">نوع التلميذ: عام • السلك: إعدادي — مثل واجهة البحث في مسار، لكن هنا للبيانات التجريبية فقط.</p>
+        </div>
         <div class="row" style="margin-bottom:10px">
           <input type="search" id="searchInput" placeholder="ابحث بالاسم أو رقم مسار..." oninput="renderStudents()">
           <select id="filterInput" onchange="renderStudents()">
@@ -174,7 +256,7 @@ code{background:#eef2f6;padding:1px 6px;border-radius:5px;direction:ltr;display:
       <div class="card">
         <h2 id="editTitle"></h2>
         <p class="muted" id="editSub"></p>
-        <p><b>اختر 5 أنشطة فقط، مرتبة حسب رغبة التلميذ من 1 إلى 5.</b><br><span class="muted">اضغط على نشاط لمنحه الرتبة الموالية، واضغط عليه مجدداً لإلغائه. عند الإلغاء يُعاد ترقيم الباقي تلقائياً.</span></p>
+        <p><b>اختر 5 أنشطة فقط، مرتبة حسب رغبة التلميذ من 1 إلى 5.</b><br><span class="muted">اضغط على أي نشاط للدخول إليه، ثم اختر رتبته بنفسك من 1 إلى 5 — ليس بالضغط المتتابع. عند اختيار رتبة مشغولة، يُعاد ترتيب الباقي تلقائياً.</span></p>
         <div class="act-grid" id="actsGrid"></div>
         <p id="editCounter" style="font-weight:700"></p>
         <div class="row">
@@ -238,6 +320,18 @@ code{background:#eef2f6;padding:1px 6px;border-radius:5px;direction:ltr;display:
       </div>
     </section>
   </main>
+</div>
+
+<div id="rankPicker" class="hidden">
+  <div class="picker-card">
+    <h2 id="pickerTitle" style="margin:0 0 6px;color:var(--navy)"></h2>
+    <p class="muted" id="pickerSub" style="margin:0">اختر رتبة هذا النشاط من 1 إلى 5. إن كانت الرتبة مشغولة بنشاط آخر، سيُعاد ترتيب الباقي تلقائياً.</p>
+    <div class="rank-grid" id="rankGrid"></div>
+    <div class="row">
+      <button class="btn-danger" id="pickerRemove" onclick="removeRank()">إلغاء اختيار هذا النشاط</button>
+      <button class="btn-light" onclick="closeRankPicker()">إغلاق</button>
+    </div>
+  </div>
 </div>
 
 <div id="toast" class="toast hidden"></div>
@@ -371,6 +465,9 @@ function openClass(classId){
   currentClass=classId;
   const lv=LEVELS.find(l=>l.id===classId.split(" ")[0]);
   document.getElementById("studentsTitle").textContent="القسم "+classId+" — لائحة التلاميذ";
+  document.getElementById("fltLevel").innerHTML=LEVELS.map(l=>`<option value="${l.id}">${l.name} (${l.id})</option>`).join("");
+  document.getElementById("fltLevel").value=classId.split(" ")[0];
+  fillStudentFilters();
   renderStudents();
   goView("students", "الرئيسية ← "+lv.name+" ← القسم "+classId);
 }
@@ -400,21 +497,57 @@ function openEdit(studentId){
 function renderActs(){
   document.getElementById("actsGrid").innerHTML = ACTIVITIES.map(a=>{
     const idx=draft.indexOf(a.id);
-    return `<button class="act ${idx>=0?'selected':''}" onclick="toggleAct('${a.id}')">
+    return `<button class="act ${idx>=0?'selected':''}" onclick="openRankPicker('${a.id}')">
       <span class="rank">${idx>=0?idx+1:""}</span>
-      <b>${esc(a.name)}</b><br><small>${idx>=0?("الاختيار رقم "+(idx+1)+" — اضغط للإلغاء"):"اضغط للاختيار"}</small>
+      <b>${esc(a.name)}</b><br><small>${idx>=0?("الرتبة الحالية: "+(idx+1)+" — اضغط لتغييرها"):"اضغط للدخول واختيار الرتبة"}</small>
     </button>`;
   }).join("");
   document.getElementById("editCounter").textContent=`تم اختيار ${draft.length} من 5 أنشطة.`;
 }
-function toggleAct(id){
+let pickerAct=null;
+function openRankPicker(id){
+  pickerAct=id;
+  const a=ACTIVITIES.find(x=>x.id===id);
   const idx=draft.indexOf(id);
-  if(idx>=0){ draft.splice(idx,1); }
-  else{
-    if(draft.length>=5){ toast("اخترت 5 أنشطة بالفعل. ألغِ واحداً أولاً لتغييره."); return; }
-    draft.push(id);
+  document.getElementById("pickerTitle").textContent=a.name;
+  document.getElementById("pickerSub").textContent = idx>=0 ? ("الرتبة الحالية لهذا النشاط: "+(idx+1)+". اختر رتبة جديدة، أو ألغِ اختياره.") : "اختر رتبة هذا النشاط من 1 إلى 5.";
+  document.getElementById("pickerRemove").classList.toggle("hidden", idx<0);
+  document.getElementById("rankGrid").innerHTML = [1,2,3,4,5].map(n=>{
+    const occupant = draft[n-1];
+    const occName = occupant ? ACTIVITIES.find(x=>x.id===occupant).name : "";
+    const cls = (idx===n-1) ? "current" : (occupant ? "taken" : "");
+    let label = (idx===n-1) ? "الرتبة الحالية" : (occupant ? ("مشغولة: "+occName) : "فارغة");
+    let disabled = "";
+    if(idx<0 && draft.length>=5){ label="ألغِ نشاطاً أولاً"; disabled="disabled"; }
+    else if(idx<0 && n>draft.length+1){ label="غير متاحة بعد"; disabled="disabled"; }
+    return `<button class="rank-btn ${cls}" ${disabled} onclick="chooseRank(${n})">${n}<br><span style="font-size:11px;font-weight:400">${label}</span></button>`;
+  }).join("");
+  if(idx<0 && draft.length>=5){
+    document.getElementById("pickerSub").textContent="اكتملت 5 أنشطة. ألغِ نشاطاً من القائمة أولاً، ثم عد لاختيار رتبة هذا النشاط.";
   }
-  renderActs();
+  document.getElementById("rankPicker").classList.remove("hidden");
+}
+function closeRankPicker(){ document.getElementById("rankPicker").classList.add("hidden"); pickerAct=null; }
+function removeRank(){
+  if(!pickerAct) return;
+  const idx=draft.indexOf(pickerAct);
+  if(idx>=0) draft.splice(idx,1);
+  closeRankPicker(); renderActs();
+}
+function chooseRank(n){
+  if(!pickerAct) return;
+  const id=pickerAct;
+  const oldIdx=draft.indexOf(id);
+  if(oldIdx>=0){
+    // نشاط مختار أصلاً: انقله إلى الرتبة الجديدة، وينسحب الباقي تلقائياً
+    draft.splice(oldIdx,1);
+    draft.splice(n-1,0,id);
+  } else {
+    if(draft.length>=5){ toast("اكتملت 5 أنشطة. ألغِ نشاطاً أولاً."); return; }
+    if(n>draft.length+1){ toast("اختر رتبة متاحة."); return; }
+    draft.splice(n-1,0,id);
+  }
+  closeRankPicker(); renderActs();
 }
 function saveOnly(){
   if(draft.length!==5){ toast("يجب اختيار 5 أنشطة بالضبط قبل الحفظ."); return; }
@@ -483,6 +616,53 @@ function resetChoices(){
   if(!confirm("مسح كل الاختيارات المحفوظة؟ لائحة التلاميذ ستبقى كما هي.")) return;
   choices={}; persist(); renderDashboard(); toast("تم مسح الاختيارات.");
 }
+function getAuth(){ try{ return JSON.parse(localStorage.getItem("massar-sim-auth-v1")||"null"); }catch(e){ return null; } }
+function enc(s){ return btoa(String.fromCharCode(...new TextEncoder().encode(s))); }
+function showLoginScreen(){
+  const a=getAuth();
+  document.getElementById("loginScreen").classList.remove("hidden");
+  document.getElementById("loginForm").classList.toggle("hidden", !a);
+  document.getElementById("setupForm").classList.toggle("hidden", !!a);
+  document.getElementById("loginError").textContent="";
+}
+function hideLoginScreen(){ document.getElementById("loginScreen").classList.add("hidden"); }
+function doSetup(){
+  const u=document.getElementById("setupUser").value.trim();
+  const p=document.getElementById("setupPass").value;
+  if(!u || p.length<4){ toast("اختر اسم مستخدم وكلمة مرور تجريبية من 4 حروف على الأقل."); return; }
+  localStorage.setItem("massar-sim-auth-v1", JSON.stringify({u:u, p:enc(p)}));
+  sessionStorage.setItem("massar-sim-session","1");
+  document.getElementById("appUser").textContent="المستخدم: "+u;
+  hideLoginScreen(); toast("✓ تم إنشاء الحساب التجريبي والدخول.");
+}
+function doLogin(){
+  const a=getAuth(); if(!a){ showLoginScreen(); return; }
+  const u=document.getElementById("loginUser").value.trim();
+  const p=document.getElementById("loginPass").value;
+  if(u===a.u && enc(p)===a.p){
+    sessionStorage.setItem("massar-sim-session","1");
+    document.getElementById("appUser").textContent="المستخدم: "+u;
+    hideLoginScreen();
+  } else {
+    document.getElementById("loginError").textContent="اسم المستخدم أو كلمة المرور التجريبية غير صحيحة.";
+  }
+}
+function logout(){
+  sessionStorage.removeItem("massar-sim-session");
+  showLoginScreen();
+}
+function resetAuth(){
+  if(!confirm("إعادة تعيين الدخول المحلي؟ سيُطلب منك إنشاء حساب تجريبي جديد، وستبقى الاختيارات المحفوظة.")) return;
+  localStorage.removeItem("massar-sim-auth-v1");
+  sessionStorage.removeItem("massar-sim-session");
+  showLoginScreen();
+}
+function fillStudentFilters(){
+  const lvId=document.getElementById("fltLevel").value;
+  const lv=LEVELS.find(l=>l.id===lvId) || LEVELS[0];
+  document.getElementById("fltClass").innerHTML=Array.from({length:lv.classes},(_,k)=>`<option value="${lv.id} ${k+1}" ${currentClass===(lv.id+" "+(k+1))?"selected":""}>${lv.id} ${k+1}</option>`).join("");
+}
+function filterJump(){ openClass(document.getElementById("fltClass").value); }
 function loadGhSettings(){
   try{
     const s=JSON.parse(localStorage.getItem("massar-sim-gh")||"null");
@@ -515,6 +695,15 @@ async function saveToGitHub(){
 loadGhSettings();
 renderDashboard();
 goView("dashboard");
+(function(){
+  const a=getAuth();
+  if(a && sessionStorage.getItem("massar-sim-session")==="1"){
+    document.getElementById("appUser").textContent="المستخدم: "+a.u;
+    hideLoginScreen();
+  } else {
+    showLoginScreen();
+  }
+})();
 </script>
 </body>
 </html>
