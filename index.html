@@ -161,6 +161,16 @@ code{background:#eef2f6;padding:1px 6px;border-radius:5px;direction:ltr;display:
       </div>
 
       <div class="card">
+        <h2>🔄 الحفظ المشترك بين الأجهزة</h2>
+        <p class="muted">الحفظ العادي يبقى في نفس الجهاز فقط. باش تشوف تعديلاتك من جهاز آخر، فعّل المزامنة مع GitHub من واجهة الأدوات: الموقع كيجلب الاختيارات من ملف <code>choices.json</code> في المستودع عند الفتح، وكيرفع تعديلاتك لنفس الملف عند كل حفظ. القراءة من المستودع العام لا تحتاج Token، أما الرفع فيحتاج Token تدخلو مرة واحدة في كل جهاز.</p>
+        <div class="row">
+          <button class="btn" onclick="loadFromGitHub(true)">تحميل من GitHub الآن</button>
+          <button class="btn-light" onclick="goView('tools')">إعدادات المزامنة ←</button>
+          <span id="syncStatusDash" class="muted"></span>
+        </div>
+      </div>
+
+      <div class="card">
         <h2>حصيلة السنة الدراسية — 2025/2026</h2>
         <div class="circle">
           <button class="q q1" onclick="goStudentsFromMenu()">التلميذ<small>لوائح التلاميذ</small></button>
@@ -291,13 +301,16 @@ code{background:#eef2f6;padding:1px 6px;border-radius:5px;direction:ltr;display:
       <div class="card">
         <h2>الحفظ في GitHub (اختياري)</h2>
         <p class="muted">GitHub Pages موقع ساكن، لا يحفظ المعطيات وحده. املأ الحقول التالية ليحفظ الموقع ملف <code>choices.json</code> داخل مستودع عبر GitHub API. الـ Token لا يغادر متصفحك.</p>
-        <div class="field"><label>مالك المستودع (Owner)</label><input id="ghOwner" placeholder="مثال: MouadCrea"></div>
-        <div class="field"><label>اسم المستودع (Repo)</label><input id="ghRepo" placeholder="مثال: massar-sim"></div>
+        <div class="field"><label>مالك المستودع (Owner)</label><input id="ghOwner" value="MouadCrea"></div>
+        <div class="field"><label>اسم المستودع (Repo)</label><input id="ghRepo" value="massar-sim"></div>
         <div class="field"><label>الفرع</label><input id="ghBranch" value="main"></div>
         <div class="field"><label>مسار الملف داخل المستودع</label><input id="ghPath" value="choices.json"></div>
-        <div class="field"><label>GitHub Token</label><input id="ghToken" type="password" placeholder="ghp_..."></div>
-        <label><input type="checkbox" id="ghRemember" style="width:auto"> تذكّر إعدادات GitHub في هذا المتصفح فقط</label>
-        <div class="row" style="margin-top:10px"><button class="btn-gold" onclick="saveToGitHub()">حفظ في GitHub الآن</button><span id="ghStatus" class="muted"></span></div>
+        <div class="field"><label>GitHub Token (للرفع فقط — القراءة من مستودع عام لا تحتاجه)</label><input id="ghToken" type="password" placeholder="ghp_..."></div>
+        <label><input type="checkbox" id="ghRemember" style="width:auto"> تذكّر إعدادات GitHub في هذا المتصفح فقط</label><br>
+        <label><input type="checkbox" id="ghRememberToken" style="width:auto"> تذكّر Token في هذا الجهاز فقط (ضروري للمزامنة التلقائية)</label><br>
+        <label><input type="checkbox" id="ghAuto" style="width:auto" onchange="localStorage.setItem('massar-sim-gh-auto', this.checked?'1':'0')"> ☑️ مزامنة تلقائية مع GitHub عند كل حفظ</label>
+        <p class="muted">نصيحة أمان: استعمل Token محدود (Fine-grained) يقتصر على هذا المستودع فقط، بصلاحية Contents قراءة وكتابة، ولا تستعمل Token حسابك الرئيسي الكامل. عند الفتح، الموقع يدمج اختيارات GitHub مع اختياراتك المحلية دون مسح تعديلاتك.</p>
+        <div class="row" style="margin-top:10px"><button class="btn-gold" onclick="saveToGitHub()">رفع إلى GitHub الآن</button><button class="btn" onclick="loadFromGitHub(true)">تحميل من GitHub الآن</button><span id="ghStatus" class="muted"></span></div>
       </div>
     </section>
 
@@ -382,7 +395,7 @@ LEVELS.forEach(lv=>{
 const KEY="massar-sim-choices-v1";
 let choices={};
 try{ choices=JSON.parse(localStorage.getItem(KEY)||"{}"); }catch(e){ choices={}; }
-function persist(){ localStorage.setItem(KEY, JSON.stringify(choices)); updateStats(); }
+function persist(){ localStorage.setItem(KEY, JSON.stringify(choices)); localStorage.setItem("massar-sim-savedAt", String(Date.now())); updateStats(); }
 let currentLevel=null, currentClass=null, currentStudent=null, draft=[];
 function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.remove("hidden"); setTimeout(()=>t.classList.add("hidden"),2600); }
 function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
@@ -540,13 +553,20 @@ function chooseRank(n){
   }
   closeRankPicker(); renderActs();
 }
-function saveOnly(){
+async function autoSyncIfEnabled(){
+  if(localStorage.getItem("massar-sim-gh-auto")!=="1") return;
+  const ok=await saveToGitHub(true);
+  if(!ok) toast("تم الحفظ محلياً فقط — فشلت المزامنة مع GitHub. تحقق من Token في الأدوات.");
+}
+async function saveOnly(){
   if(draft.length!==5){ toast("يجب اختيار 5 أنشطة بالضبط قبل الحفظ."); return; }
   choices[currentStudent.id]=[...draft]; persist(); renderActs(); toast("✓ تم حفظ اختيارات "+currentStudent.name);
+  await autoSyncIfEnabled();
 }
-function saveAndNext(){
+async function saveAndNext(){
   if(draft.length!==5){ toast("يجب اختيار 5 أنشطة بالضبط قبل الحفظ."); return; }
   choices[currentStudent.id]=[...draft]; persist();
+  await autoSyncIfEnabled();
   const list=classStudents(currentStudent.classId);
   const i=list.findIndex(s=>s.id===currentStudent.id);
   toast("✓ تم الحفظ.");
@@ -636,34 +656,74 @@ function fillStudentFilters(){
   document.getElementById("fltClass").innerHTML=Array.from({length:lv.classes},(_,k)=>`<option value="${lv.id} ${k+1}" ${currentClass===(lv.id+" "+(k+1))?"selected":""}>${lv.id} ${k+1}</option>`).join("");
 }
 function filterJump(){ openClass(document.getElementById("fltClass").value); }
+function ghFields(){
+  return {
+    owner:(document.getElementById("ghOwner")?.value||"MouadCrea").trim(),
+    repo:(document.getElementById("ghRepo")?.value||"massar-sim").trim(),
+    branch:(document.getElementById("ghBranch")?.value||"main").trim(),
+    path:(document.getElementById("ghPath")?.value||"choices.json").trim(),
+    token:(document.getElementById("ghToken")?.value||"").trim() || (localStorage.getItem("massar-sim-gh-token")||"")
+  };
+}
 function loadGhSettings(){
   try{
     const s=JSON.parse(localStorage.getItem("massar-sim-gh")||"null");
-    if(s){ document.getElementById("ghOwner").value=s.owner||""; document.getElementById("ghRepo").value=s.repo||""; document.getElementById("ghBranch").value=s.branch||"main"; document.getElementById("ghPath").value=s.path||"choices.json"; document.getElementById("ghRemember").checked=true; }
+    if(s){ document.getElementById("ghOwner").value=s.owner||"MouadCrea"; document.getElementById("ghRepo").value=s.repo||"massar-sim"; document.getElementById("ghBranch").value=s.branch||"main"; document.getElementById("ghPath").value=s.path||"choices.json"; document.getElementById("ghRemember").checked=true; }
+    const tok=localStorage.getItem("massar-sim-gh-token");
+    if(tok){ document.getElementById("ghToken").value=tok; document.getElementById("ghRememberToken").checked=true; }
+    document.getElementById("ghAuto").checked = localStorage.getItem("massar-sim-gh-auto")==="1";
   }catch(e){}
 }
-async function saveToGitHub(){
-  const owner=document.getElementById("ghOwner").value.trim();
-  const repo=document.getElementById("ghRepo").value.trim();
-  const branch=document.getElementById("ghBranch").value.trim()||"main";
-  const path=document.getElementById("ghPath").value.trim()||"choices.json";
-  const token=document.getElementById("ghToken").value.trim();
+function setSyncStatus(msg){
+  const a=document.getElementById("ghStatus"); if(a) a.textContent=msg;
+  const b=document.getElementById("syncStatusDash"); if(b) b.textContent=msg;
+}
+async function loadFromGitHub(manual){
+  const {owner,repo,branch,path}=ghFields();
+  if(!owner||!repo){ if(manual) toast("املأ Owner و Repo أولاً."); return 0; }
+  try{
+    const url=`https://raw.githubusercontent.com/${owner}/${repo}/${encodeURIComponent(branch)}/${encodeURIComponent(path)}?t=${Date.now()}`;
+    const res=await fetch(url);
+    if(!res.ok){ if(manual) toast("لا يوجد ملف choices.json بعد في المستودع — ارفع أولاً من جهازك الأول."); setSyncStatus("لا يوجد ملف مزامنة بعد في GitHub."); return 0; }
+    const data=await res.json();
+    if(!data.choices) throw 0;
+    let added=0;
+    Object.keys(data.choices).forEach(id=>{
+      const ch=data.choices[id];
+      if(!choices[id] || choices[id].length!==5){ choices[id]=ch; added++; }
+    });
+    if(added>0){ persist(); renderDashboard(); }
+    else { updateStats(); }
+    const msg=`✓ تم الجلب من GitHub: ${added} اختيار جديد أُضيف، وتعديلاتك المحلية محفوظة.`;
+    setSyncStatus(msg);
+    if(manual || added>0) toast(msg);
+    return added;
+  }catch(e){
+    if(manual) toast("تعذر الجلب من GitHub. تحقق من الاتصال واسم المستودع.");
+    return 0;
+  }
+}
+async function saveToGitHub(silent){
+  const {owner,repo,branch,path,token}=ghFields();
   const status=document.getElementById("ghStatus");
-  if(!owner||!repo||!token){ status.textContent="املأ Owner و Repo و Token أولاً."; return; }
-  if(document.getElementById("ghRemember").checked){ localStorage.setItem("massar-sim-gh", JSON.stringify({owner,repo,branch,path})); }
-  status.textContent="جارٍ الحفظ في GitHub...";
+  if(!owner||!repo||!token){ if(!silent && status) status.textContent="املأ Owner و Repo و Token أولاً."; return false; }
+  if(document.getElementById("ghRemember")?.checked){ localStorage.setItem("massar-sim-gh", JSON.stringify({owner,repo,branch,path})); }
+  if(document.getElementById("ghRememberToken")?.checked && token){ localStorage.setItem("massar-sim-gh-token", token); }
+  if(!silent) setSyncStatus("جارٍ الرفع إلى GitHub...");
   try{
     const base=`https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}`;
     let sha=null;
     const get=await fetch(base+`?ref=${encodeURIComponent(branch)}`, {headers:{Authorization:"Bearer "+token, Accept:"application/vnd.github+json"}});
     if(get.ok){ const j=await get.json(); sha=j.sha; }
+    else if(get.status!==404){ if(!silent) setSyncStatus("فشل الرفع: "+get.status+" — تحقق من Token."); return false; }
     const content={exportedAt:new Date().toISOString(), note:"تجريبي - بيانات وهمية", choices:choices};
     const body=JSON.stringify({message:"تحديث اختيارات الأنشطة الموازية (محاكاة تجريبية)", content:btoa(String.fromCharCode(...new TextEncoder().encode(JSON.stringify(content,null,2)))), branch:branch, ...(sha?{sha}:{})});
     const put=await fetch(base, {method:"PUT", headers:{Authorization:"Bearer "+token, Accept:"application/vnd.github+json","Content-Type":"application/json"}, body:body});
-    if(!put.ok){ status.textContent="فشل الحفظ: "+put.status+" — تحقق من Token واسم المستودع."; return; }
-    status.textContent="✓ تم الحفظ في GitHub: "+owner+"/"+repo+" — "+path;
-    toast("✓ تم الحفظ في GitHub.");
-  }catch(e){ status.textContent="تعذر الاتصال بـ GitHub. تحقق من الاتصال."; }
+    if(!put.ok){ if(!silent) setSyncStatus("فشل الرفع: "+put.status+" — تحقق من Token واسم المستودع."); return false; }
+    setSyncStatus("✓ تم الرفع إلى GitHub: "+owner+"/"+repo+" — "+path);
+    if(!silent) toast("✓ تم الحفظ في GitHub.");
+    return true;
+  }catch(e){ if(!silent) setSyncStatus("تعذر الاتصال بـ GitHub. تحقق من الاتصال."); return false; }
 }
 loadGhSettings();
 renderDashboard();
@@ -676,6 +736,8 @@ goView("dashboard");
     showLoginScreen();
   }
 })();
+// جلب تلقائي صامت من GitHub عند الفتح (قراءة من مستودع عام، بلا Token)
+setTimeout(()=>{ loadFromGitHub(false); }, 900);
 </script>
 </body>
 </html>
